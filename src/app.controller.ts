@@ -12,7 +12,9 @@ export class AppController {
   }
 
   @Get('data')
-  getData(@Query('user', ParseIntPipe) id: number): GetDataResultDTO {
+  async getData(
+    @Query('user', ParseIntPipe) id: number,
+  ): Promise<GetDataResultDTO> {
     return this.appService.getData(id);
   }
 }

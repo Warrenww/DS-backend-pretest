@@ -1,12 +1,22 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, Injectable } from '@nestjs/common';
 import { GetDataResultDTO } from './dtos/get-data-result.dto';
+import axios from 'axios';
 
 @Injectable()
 export class AppService {
-  getData(id: number): GetDataResultDTO {
-    console.log(id);
+  async getData(id: number): Promise<GetDataResultDTO> {
+    const data = await axios
+      .get<number[]>(
+        'https://hacker-news.firebaseio.com/v0/topstories.json?print=pretty',
+      )
+      .then((res) => res.data)
+      .catch((err) => {
+        console.error(err);
+        throw HttpException;
+      });
+
     return {
-      result: [],
+      result: data.filter((x) => x % id === 0),
     };
   }
 
