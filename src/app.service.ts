@@ -1,6 +1,6 @@
 import { HttpException, Injectable } from '@nestjs/common';
-import { GetDataResultDTO } from './dtos/get-data-result.dto';
 import axios from 'axios';
+import { GetDataResultDTO } from './dtos/get-data-result.dto';
 
 @Injectable()
 export class AppService {

@@ -1,6 +1,13 @@
-import { Controller, Get, ParseIntPipe, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  ParseIntPipe,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { AppService } from './app.service';
 import { GetDataResultDTO } from './dtos/get-data-result.dto';
+import { RateLimitGuard } from './guards/rate-limit.guard';
 
 @Controller()
 export class AppController {
@@ -12,6 +19,7 @@ export class AppController {
   }
 
   @Get('data')
+  @UseGuards(RateLimitGuard)
   async getData(
     @Query('user', ParseIntPipe) id: number,
   ): Promise<GetDataResultDTO> {
