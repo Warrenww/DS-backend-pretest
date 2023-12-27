@@ -1,0 +1,53 @@
+<html>
+<head>
+  <title>Home</title>
+  <link rel="stylesheet" type="text/css" href="css/style.css">
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>Part 1 & Part 2</h1>
+      </div>
+      <div class="content">
+        <label for="userId">user id</label>
+        <input type="number" id="userId"/>
+        <button onClick="part1()">Get</button>
+        <h2>Result</h2>
+        <div id="result-1"></div>
+      </div>
+      <div class="header">
+        <h1>Part 3</h1>
+      </div>
+      <div class="content">
+        <button onClick="part3()">connect</button>
+        <h2>Result</h2>
+        <div id="result-2"></div>
+    </div>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js" integrity="sha384-mZLF4UVrpi/QTWPA7BjNPEnkIfRFn4ZEO3Qt/HFklTJBj/gBOV8G3HcKn4NfQblz" crossorigin="anonymous"></script>
+    <script>
+      function part1(){
+        const userId = document.getElementById("userId").value;
+        fetch(`http://localhost:3000/data?user=${userId}`)
+        .then(response => response.json())
+        .then(data => {
+          const p = document.createElement("p");
+          p.innerHTML = JSON.stringify(data);
+          document.getElementById("result-1").append(p);
+        });
+      }
+      let socket;
+      function part3(){
+        socket = socket ? socket : io('http://localhost:3000');
+        socket.on('connect', () => {
+          const p = document.createElement("p");
+          p.innerHTML = "connected";
+          document.getElementById("result-2").append(p);
+        });
+        socket.on('disconnect', () => {
+          const p = document.createElement("p");
+          p.innerHTML = "disconnected";
+          document.getElementById("result-2").append(p);
+        });
+      }
+    </script>
+  </body>
+</html>
