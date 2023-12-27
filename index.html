@@ -18,7 +18,12 @@
         <h1>Part 3</h1>
       </div>
       <div class="content">
-        <button onClick="part3()">connect</button>
+        <button onClick="part3('connect')">connect</button>
+        <button onClick="part3('test')">test</button>
+        <label for="pairs">pairs</label>
+        <input type="text" id="pairs">
+        <button onClick="part3('subscribe')">subscribe</button>
+        <button onClick="part3('unsubscribe')">unsubscribe</button>
         <h2>Result</h2>
         <div id="result-2"></div>
     </div>
@@ -35,18 +40,36 @@
         });
       }
       let socket;
-      function part3(){
-        socket = socket ? socket : io('http://localhost:3000');
-        socket.on('connect', () => {
-          const p = document.createElement("p");
-          p.innerHTML = "connected";
-          document.getElementById("result-2").append(p);
-        });
-        socket.on('disconnect', () => {
-          const p = document.createElement("p");
-          p.innerHTML = "disconnected";
-          document.getElementById("result-2").append(p);
-        });
+      function part3(action){
+        if(action === 'connect') {
+          socket = socket ? socket : io('http://localhost:3000/bitstamp');
+          socket.on('connect', () => {
+            const p = document.createElement("p");
+            p.innerHTML = "connected";
+            document.getElementById("result-2").append(p);
+          });
+          socket.on('disconnect', () => {
+            const p = document.createElement("p");
+            p.innerHTML = "disconnected";
+            document.getElementById("result-2").append(p);
+          });
+          socket.on('data', (data) => {
+            const p = document.createElement("p");
+            p.innerHTML = data;
+            document.getElementById("result-2").append(p);
+          });
+        }
+        if(action === 'test') {
+          socket.emit('test', 'test', (res) => {
+            const p = document.createElement("p");
+            p.innerHTML = res;
+            document.getElementById("result-2").append(p);
+          });
+        }
+        if(action === 'subscribe') {
+          const pairs = document.getElementById("pairs").value;
+          socket.emit('subscribe', pairs.split(','));
+        }
       }
     </script>
   </body>

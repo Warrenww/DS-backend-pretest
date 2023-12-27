@@ -2,7 +2,8 @@ import { Module } from '@nestjs/common';
 import { CacheModule, CacheModuleAsyncOptions } from '@nestjs/cache-manager';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { SocketGateway } from './socket.gateway';
+import { SocketGateway } from './socket/socket.gateway';
+import { SocketModule } from './socket/socket.module';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const redisStore = require('cache-manager-redis-store').redisStore;
@@ -23,7 +24,7 @@ const RedisOptions: CacheModuleAsyncOptions = {
 };
 
 @Module({
-  imports: [CacheModule.registerAsync(RedisOptions)],
+  imports: [CacheModule.registerAsync(RedisOptions), SocketModule],
   controllers: [AppController],
   providers: [AppService, SocketGateway],
 })
