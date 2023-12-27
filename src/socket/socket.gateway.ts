@@ -21,15 +21,14 @@ import { pairs } from './constants/pair.const';
 export class SocketGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
+  @WebSocketServer() server: Server;
+  private logger: Logger = new Logger('SocketGateway');
   constructor(private socketService: SocketService) {}
 
   afterInit(server: Server) {
     this.logger.log(`Gateway init`);
     this.socketService.setSocket(server);
   }
-
-  @WebSocketServer() server: Server;
-  private logger: Logger = new Logger('EventsGateway');
 
   @SubscribeMessage('test')
   handleEvent(@MessageBody() data: string): string {

@@ -11,6 +11,7 @@
         <label for="userId">user id</label>
         <input type="number" id="userId"/>
         <button onClick="part1()">Get</button>
+        <button onClick="clearLog('result-1')">Clear</button>
         <h2>Result</h2>
         <div id="result-1"></div>
       </div>
@@ -24,63 +25,44 @@
         <input type="text" id="pairs">
         <button onClick="part3('subscribe')">subscribe</button>
         <button onClick="part3('unsubscribe')">unsubscribe</button>
+        <button onClick="clearLog('result-2')">clear</button>
         <h2>Result</h2>
         <div id="result-2"></div>
     </div>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js" integrity="sha384-mZLF4UVrpi/QTWPA7BjNPEnkIfRFn4ZEO3Qt/HFklTJBj/gBOV8G3HcKn4NfQblz" crossorigin="anonymous"></script>
     <script>
+      function log(area, data) {
+        const p = document.createElement("p");
+        p.innerHTML = data;
+        document.getElementById(area).prepend(p);
+      }
+      function clearLog(area) {
+        document.getElementById(area).innerHTML = '';
+      }
       function part1(){
         const userId = document.getElementById("userId").value;
         fetch(`http://localhost:3000/data?user=${userId}`)
         .then(response => response.json())
-        .then(data => {
-          const p = document.createElement("p");
-          p.innerHTML = JSON.stringify(data);
-          document.getElementById("result-1").prepend(p);
-        });
+        .then(data => log('result-1', JSON.stringify(data)));
       }
       let socket;
       function part3(action){
         if(action === 'connect') {
           socket = socket ? socket : io('http://localhost:3000/bitstamp');
-          socket.on('connect', () => {
-            const p = document.createElement("p");
-            p.innerHTML = "connected";
-            document.getElementById("result-2").prepend(p);
-          });
-          socket.on('disconnect', () => {
-            const p = document.createElement("p");
-            p.innerHTML = "disconnected";
-            document.getElementById("result-2").prepend(p);
-          });
-          socket.on('data', (data) => {
-            const p = document.createElement("p");
-            p.innerHTML = data;
-            document.getElementById("result-2").prepend(p);
-          });
+          socket.on('connect', () => log('result-2', 'connected'));
+          socket.on('disconnect', () => log('result-2', 'disconnected'));
+          socket.on('trade', (data) => log('result-2', JSON.stringify(data)));
         }
         if(action === 'test') {
-          socket.emit('test', 'test', (res) => {
-            const p = document.createElement("p");
-            p.innerHTML = res;
-            document.getElementById("result-2").prepend(p);
-          });
+          socket.emit('test', 'test', (res) => log('result-2', res));
         }
-        if(action === 'subscribe') {
+        if(action === 'subscribe' || action === 'unsubscribe') {
           const pairs = document.getElementById("pairs").value;
-          socket.emit('subscribe', pairs.split(',').map((x) => x.trim()), (res) => {
-            const p = document.createElement("p");
-            p.innerHTML = `Now subscribed to ${res}`;
-            document.getElementById("result-2").prepend(p);
-          });
-        }
-        if(action === 'unsubscribe') {
-          const pairs = document.getElementById("pairs").value;
-          socket.emit('unsubscribe', pairs.split(',').map((x) => x.trim()), (res) => {
-            const p = document.createElement("p");
-            p.innerHTML = `Now subscribe to ${res}`;
-            document.getElementById("result-2").prepend(p);
-          });
+          socket.emit(
+            action, 
+            pairs.split(',').map((x) => x.trim()), 
+            (res) => log('result-2', `Now subscribed to ${res}`),
+          );
         }
       }
     </script>
