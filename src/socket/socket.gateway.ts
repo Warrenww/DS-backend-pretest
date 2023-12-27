@@ -41,15 +41,18 @@ export class SocketGateway
   handleSubscribe(
     @MessageBody() data: string[],
     @ConnectedSocket() client: Socket,
-  ) {
+  ): Promise<string[]> {
     if (typeof data === 'string') data = [data];
-    data
-      .filter((x) => pairs.includes(x))
-      .slice(0, 10)
-      .forEach((x) => {
-        this.socketService.createRoom(x);
-        client.join(x);
-      });
+    return this.socketService.handleSubscribe(data, client);
+  }
+
+  @SubscribeMessage('unsubscribe')
+  handleUnsubscribe(
+    @MessageBody() data: string[],
+    @ConnectedSocket() client: Socket,
+  ): Promise<string[]> {
+    if (typeof data === 'string') data = [data];
+    return this.socketService.handleUnsubscribe(data, client);
   }
 
   handleConnection(client: Socket) {

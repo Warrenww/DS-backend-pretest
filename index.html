@@ -36,7 +36,7 @@
         .then(data => {
           const p = document.createElement("p");
           p.innerHTML = JSON.stringify(data);
-          document.getElementById("result-1").append(p);
+          document.getElementById("result-1").prepend(p);
         });
       }
       let socket;
@@ -46,29 +46,41 @@
           socket.on('connect', () => {
             const p = document.createElement("p");
             p.innerHTML = "connected";
-            document.getElementById("result-2").append(p);
+            document.getElementById("result-2").prepend(p);
           });
           socket.on('disconnect', () => {
             const p = document.createElement("p");
             p.innerHTML = "disconnected";
-            document.getElementById("result-2").append(p);
+            document.getElementById("result-2").prepend(p);
           });
           socket.on('data', (data) => {
             const p = document.createElement("p");
             p.innerHTML = data;
-            document.getElementById("result-2").append(p);
+            document.getElementById("result-2").prepend(p);
           });
         }
         if(action === 'test') {
           socket.emit('test', 'test', (res) => {
             const p = document.createElement("p");
             p.innerHTML = res;
-            document.getElementById("result-2").append(p);
+            document.getElementById("result-2").prepend(p);
           });
         }
         if(action === 'subscribe') {
           const pairs = document.getElementById("pairs").value;
-          socket.emit('subscribe', pairs.split(','));
+          socket.emit('subscribe', pairs.split(',').map((x) => x.trim()), (res) => {
+            const p = document.createElement("p");
+            p.innerHTML = `Now subscribed to ${res}`;
+            document.getElementById("result-2").prepend(p);
+          });
+        }
+        if(action === 'unsubscribe') {
+          const pairs = document.getElementById("pairs").value;
+          socket.emit('unsubscribe', pairs.split(',').map((x) => x.trim()), (res) => {
+            const p = document.createElement("p");
+            p.innerHTML = `Now subscribe to ${res}`;
+            document.getElementById("result-2").prepend(p);
+          });
         }
       }
     </script>
