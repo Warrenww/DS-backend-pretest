@@ -11,7 +11,6 @@ import {
 import { Logger } from '@nestjs/common';
 import { Socket, Server } from 'socket.io';
 import { SocketService } from './socket.service';
-import { pairs } from './constants/pair.const';
 
 @WebSocketGateway({
   transports: ['websocket', 'polling', 'flashsocket'],

@@ -2,29 +2,52 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import WebSocket from 'ws';
 import { pairs } from './constants/pair.const';
+import { SubscribeData } from './types/subscribe-data.type';
+import { ohlcDataType } from './types/ohlc-data.type';
 
-type SubscribeData = {
-  data: {
-    id: number;
-    timestamp: string;
-    amount: number;
-    amount_str: string;
-    price: number;
-    price_str: string;
-    type: 0 | 1;
-    microtimestamp: string;
-    buy_order_id: number;
-    sell_order_id: number;
+class OHLCDataSource {
+  constructor(public readonly pair: string) {}
+
+  private current: ohlcDataType = {
+    open: 0,
+    high: 0,
+    low: 0,
+    close: 0,
+    timestamp: 0,
   };
-  channel: string;
-  event: string;
-};
+
+  consume(price: number, timestamp: number = Date.now()) {
+    if (!this.current.timestamp || timestamp - this.current.timestamp > 60000) {
+      const time = new Date(timestamp);
+      time.setSeconds(0);
+      time.setMilliseconds(0);
+      console.log(this.pair, this.current);
+
+      this.current = {
+        open: price,
+        high: price,
+        low: price,
+        close: price,
+        timestamp: time.getTime(),
+      };
+    } else {
+      if (price > this.current.high) {
+        this.current.high = price;
+      }
+      if (price < this.current.low) {
+        this.current.low = price;
+      }
+      this.current.close = price;
+    }
+  }
+}
 
 @Injectable()
 export class SocketService {
   private server: Server;
   private rooms: string[] = [];
   private subscribeMap: Map<string, Set<string>> = new Map();
+  private ohlcMap: Map<string, OHLCDataSource> = new Map();
   private ws: WebSocket;
   private logger: Logger = new Logger('SocketService');
 
@@ -59,10 +82,16 @@ export class SocketService {
       return;
     }
 
-    const room = message.channel.replace('live_trades_', '');
-    if (!this.rooms.includes(room)) return;
+    const pair = message.channel.replace('live_trades_', '');
+    if (!this.rooms.includes(pair)) return;
 
-    this.server.to(room).emit('trade', message.data.price);
+    if (!this.ohlcMap.has(pair)) {
+      this.ohlcMap.set(pair, new OHLCDataSource(pair));
+    }
+    const { price, timestamp } = message.data;
+    const ohlc = this.ohlcMap.get(pair);
+    ohlc.consume(price, Number(timestamp) * 1000);
+    this.server.to(pair).emit('trade', price);
   }
 
   async handleSubscribe(data: string[], client: Socket) {
