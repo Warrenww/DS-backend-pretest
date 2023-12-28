@@ -1,14 +1,16 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Cache } from 'cache-manager';
 import { Server, Socket } from 'socket.io';
 import WebSocket from 'ws';
 import { pairs } from './constants/pair.const';
+import { OHLCDataType, ConsumeResult } from './types/ohlc-data.type';
 import { SubscribeData } from './types/subscribe-data.type';
-import { ohlcDataType } from './types/ohlc-data.type';
 
 class OHLCDataSource {
   constructor(public readonly pair: string) {}
 
-  private current: ohlcDataType = {
+  private current: OHLCDataType = {
     open: 0,
     high: 0,
     low: 0,
@@ -16,12 +18,18 @@ class OHLCDataSource {
     timestamp: 0,
   };
 
-  consume(price: number, timestamp: number = Date.now()) {
+  consume(price: number, timestamp: number = Date.now()): ConsumeResult {
+    let result: ConsumeResult = { status: 'skip' };
     if (!this.current.timestamp || timestamp - this.current.timestamp > 60000) {
       const time = new Date(timestamp);
       time.setSeconds(0);
       time.setMilliseconds(0);
-      console.log(this.pair, this.current);
+      if (this.current.timestamp) {
+        result = {
+          status: 'update',
+          data: this.current,
+        };
+      }
 
       this.current = {
         open: price,
@@ -39,6 +47,7 @@ class OHLCDataSource {
       }
       this.current.close = price;
     }
+    return result;
   }
 }
 
@@ -51,7 +60,7 @@ export class SocketService {
   private ws: WebSocket;
   private logger: Logger = new Logger('SocketService');
 
-  constructor() {
+  constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {
     this.ws = new WebSocket('wss://ws.bitstamp.net');
     this.ws.on('error', this.logger.error);
 
@@ -90,7 +99,11 @@ export class SocketService {
     }
     const { price, timestamp } = message.data;
     const ohlc = this.ohlcMap.get(pair);
-    ohlc.consume(price, Number(timestamp) * 1000);
+    const result = ohlc.consume(price, Number(timestamp) * 1000);
+    if (result.status === 'update') {
+      const pairKey = `ohlc:${pair}:${result.data.timestamp}`;
+      this.cacheManager.set(pairKey, result, { ttl: 15 * 60 } as any);
+    }
     this.server.to(pair).emit('trade', price);
   }
 
