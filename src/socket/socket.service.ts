@@ -11,6 +11,7 @@ class OHLCDataSource {
   constructor(public readonly pair: string) {}
 
   private current: OHLCDataType = {
+    pair: this.pair,
     open: 0,
     high: 0,
     low: 0,
@@ -32,6 +33,7 @@ class OHLCDataSource {
       }
 
       this.current = {
+        ...this.current,
         open: price,
         high: price,
         low: price,
@@ -82,7 +84,7 @@ export class SocketService {
     });
   }
 
-  handleData(message: SubscribeData) {
+  async handleData(message: SubscribeData) {
     if (
       message.event !== 'trade' ||
       !message.channel.startsWith('live_trades_')
@@ -97,14 +99,25 @@ export class SocketService {
     if (!this.ohlcMap.has(pair)) {
       this.ohlcMap.set(pair, new OHLCDataSource(pair));
     }
+
     const { price, timestamp } = message.data;
     const ohlc = this.ohlcMap.get(pair);
+
     const result = ohlc.consume(price, Number(timestamp) * 1000);
     if (result.status === 'update') {
-      const pairKey = `ohlc:${pair}:${result.data.timestamp}`;
-      this.cacheManager.set(pairKey, result, { ttl: 15 * 60 } as any);
+      const { data } = result;
+      const pairKey = `ohlc:${pair}:${data.timestamp}`;
+      await this.cacheManager.set(pairKey, data, { ttl: 15 * 60 } as any);
+
+      const historyKeys = await this.cacheManager.store.keys(`ohlc:${pair}:*`);
+      const history = await Promise.all(
+        historyKeys.map((x) => this.cacheManager.get<OHLCDataType>(x)),
+      );
+
+      this.server.to(pair).emit('ohlc', history);
     }
-    this.server.to(pair).emit('trade', price);
+
+    this.server.to(pair).emit('trade', { pair, price });
   }
 
   async handleSubscribe(data: string[], client: Socket) {

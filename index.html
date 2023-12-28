@@ -52,6 +52,7 @@
           socket.on('connect', () => log('result-2', 'connected'));
           socket.on('disconnect', () => log('result-2', 'disconnected'));
           socket.on('trade', (data) => log('result-2', JSON.stringify(data)));
+          socket.on('ohlc', (data) => log('result-2', JSON.stringify(data)));
         }
         if(action === 'test') {
           socket.emit('test', 'test', (res) => log('result-2', res));

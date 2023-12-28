@@ -1,5 +1,6 @@
 export type OHLCDataType = {
   timestamp: number;
+  pair: string;
   open: number;
   high: number;
   low: number;
