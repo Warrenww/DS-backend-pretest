@@ -1,73 +1,49 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+# DS-backend-pretest
+## Endpoint
+### Part 1 & Part 2
+**GET** `http://localhost:3000/data?user={userId}`
+- If the userId is not provide or not a number, it will return `400 Bad Request` from `ParseIntPipe`
+- In `RateLimitGuard`, every time the user request the endpoint, cache the `ip` in redis with the key `ip:{ip}-{uuid}` and set the expire time to 1 minute. If the user request the endpoint more than 10 times within 1 minute, it will return `429 Too Many Requests`
+- The request `userId` will be cached in redis with the key `user:{userId}-{uuid}` and set the expire time to 1 minute. If the user request the endpoint with the same `userId` more than 5 times within 1 minute, it will return `429 Too Many Requests`
+- Both 429 error will return the current request count in the data field
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+### Part 3
+**WS** `ws://localhost:3000/bitstamp`
+- Can be connected with `socket.io`
+- It has 2 events
+  - `subscribe` - Subscribe to the channel
+  - `unsubscribe` - Unsubscribe to the channel
+- Each event will require a list of channel name to subscribe or unsubscribe
+- The channel name can be found in [Bitstamp WebSocket API](https://www.bitstamp.net/websocket/v2/)
+- The server will send the data to the client when the data is received from Bitstamp WebSocket API
+- Besides, the server will process the received data and calculate the 1minute OHLC data for each channel and send it to the client who has subscribed to the channel
+- The OHLC data will be sent to the channel room once the received data's timestamp is not in the same minute with the previous received data's timestamp
+- The OHLC data will be sent to the client with the event name `ohlc` and the data will be in the following format
+  ```json
+  {
+    "pair": "btcusd",
+    "timestamp": 1621436400,
+    "open": 0,
+    "high": 0,
+    "low": 0,
+    "close": 0
+  }
+  ```
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## How to run
+This project is using `docker-compose` to run the redis server and the backend server
 
-## Description
-
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
-## Installation
-
+### development
 ```bash
-$ yarn install
+# start the redis server
+docker-compose up -d redis
+# install the dependencies
+yard install
+# start the dev server
+yarn start:dev
 ```
 
-## Running the app
-
+### production
 ```bash
-# development
-$ yarn run start
-
-# watch mode
-$ yarn run start:dev
-
-# production mode
-$ yarn run start:prod
+docker-compose up -d --no-deps --build
 ```
-
-## Test
-
-```bash
-# unit tests
-$ yarn run test
-
-# e2e tests
-$ yarn run test:e2e
-
-# test coverage
-$ yarn run test:cov
-```
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](LICENSE).
